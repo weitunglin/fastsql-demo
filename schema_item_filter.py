@@ -211,8 +211,8 @@ def filter_schema(data, sic, num_top_k_tables = 5, num_top_k_columns = 5):
         # extract matched contents of remained columns
         for column_name in [column_names[table_idx][column_idx] for column_idx in column_indices]:
             tc_name = "{}.{}".format(table_names[table_idx], column_name)
-            if tc_name in data["matched_contents"]:
-                filtered_matched_contents[tc_name] = data["matched_contents"][tc_name]
+            # if tc_name in data["matched_contents"]:
+            #     filtered_matched_contents[tc_name] = data["matched_contents"][tc_name]
     
     # extract foreign keys among remianed tables
     filtered_table_names = [table_names[table_idx] for table_idx in table_indices]
@@ -224,7 +224,7 @@ def filter_schema(data, sic, num_top_k_tables = 5, num_top_k_columns = 5):
     # replace the old schema with the filtered schema
     data["schema"] = filtered_schema
     # replace the old matched contents with the filtered matched contents
-    data["matched_contents"] = filtered_matched_contents
+    # data["matched_contents"] = filtered_matched_contents
 
     return data
 

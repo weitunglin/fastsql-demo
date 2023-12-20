@@ -20,7 +20,7 @@ def obtain_n_grams(sequence, max_n):
     all_grams = []
     for n in range(1, max_n + 1):
         all_grams.extend([" ".join(gram) for gram in ngrams(tokens, n)])
-    
+
     return all_grams
 
 # get the database cursor for a sqlite database path
@@ -63,7 +63,7 @@ def check_sql_executability(generated_sql, db):
     except Exception as e:
         print("SQL execution runtime error: {}.".format(e))
         execution_error = str(e)
-    
+
     return execution_error
 
 def is_number(s):
@@ -95,10 +95,14 @@ def get_column_contents(column_name, table_name, cursor):
 def get_matched_contents(question, searcher):
     # coarse-grained matching between the input text and all contents in database
     grams = obtain_n_grams(question, 4)
+    print(grams)
+
     hits = []
     for query in grams:
         hits.extend(searcher.search(query, k = 10))
-    
+
+    print(hits)
+
     coarse_matched_contents = dict()
     for i in range(len(hits)):
         matched_result = json.loads(hits[i].raw)
@@ -109,12 +113,12 @@ def get_matched_contents(question, searcher):
                 coarse_matched_contents[tc_name].append(matched_result["contents"])
         else:
             coarse_matched_contents[tc_name] = [matched_result["contents"]]
-    
+
     fine_matched_contents = dict()
     for tc_name, contents in coarse_matched_contents.items():
         # fine-grained matching between the question and coarse matched contents
         fm_contents = get_matched_entries(question, contents)
-        
+
         if fm_contents is None:
             continue
         for _match_str, (field_value, _s_match_str, match_score, s_match_score, _match_size,) in fm_contents:
@@ -128,13 +132,28 @@ def get_matched_contents(question, searcher):
 
     return fine_matched_contents
 
+def get_db_schema_sequence_natsql(schema):
+    schema_sequence = ""
+    for table in schema["schema_items"]:
+        table_name = table["table_name"]
+
+        column_info_list = []
+
+        for column_name in table['column_names']:
+            column_info_list.append(table_name + "." + column_name)
+
+
+        schema_sequence += " | " + table_name + " : " + " , ".join(column_info_list)
+    
+    return schema_sequence.rstrip()
+
 def get_db_schema_sequence(schema):
     schema_sequence = "database schema :\n"
     for table in schema["schema_items"]:
         table_name, table_comment = table["table_name"], table["table_comment"]
         if detect_special_char(table_name):
             table_name = add_quotation_mark(table_name)
-        
+
         # if table_comment != "":
         #     table_name += " ( comment : " + table_comment + " )"
 
@@ -155,9 +174,9 @@ def get_db_schema_sequence(schema):
             # representive column values
             if len(column_content) != 0:
                 additional_column_info.append("values : " + " , ".join(column_content))
-            
+
             column_info_list.append(table_name + "." + column_name + " ( " + " | ".join(additional_column_info) + " )")
-        
+
         schema_sequence += "table "+ table_name + " , columns = [ " + " , ".join(column_info_list) + " ]\n"
 
     if len(schema["foreign_keys"]) != 0:
@@ -183,11 +202,11 @@ def get_matched_content_sequence(matched_contents):
                 table_name = add_quotation_mark(table_name)
             if detect_special_char(column_name):
                 column_name = add_quotation_mark(column_name)
-            
+
             content_sequence += table_name + "." + column_name + " ( " + " , ".join(contents) + " )\n"
     else:
         content_sequence = "matched contents : None"
-    
+
     return content_sequence.strip()
 
 def get_db_schema(db_path, db_comments, db_id):
@@ -197,7 +216,7 @@ def get_db_schema(db_path, db_comments, db_id):
         db_comment = None
 
     cursor = get_cursor_from_path(db_path)
-    
+
     # obtain table names
     results = execute_sql(cursor, "SELECT name FROM sqlite_master WHERE type='table';")
     table_names = [result[0].lower() for result in results]
@@ -219,13 +238,13 @@ def get_db_schema(db_path, db_comments, db_id):
         column_contents = []
         for column_name in column_names_in_one_table:
             column_contents.append(get_column_contents(column_name, table_name, cursor))
-        
+
         # obtain foreign keys in the current table
         results = execute_sql(cursor, "SELECT * FROM pragma_foreign_key_list('{}');".format(table_name))
         for result in results:
             if None not in [result[3], result[2], result[4]]:
                 foreign_keys.append([table_name.lower(), result[3].lower(), result[2].lower(), result[4].lower()])
-        
+
         # obtain comments for each schema item
         if db_comment is not None:
             if table_name in db_comment: # record comments for tables and columns
@@ -249,7 +268,7 @@ def get_db_schema(db_path, db_comments, db_id):
             "column_contents": column_contents,
             "pk_indicators": pk_indicators_in_one_table
         })
-    
+
     schema["foreign_keys"] = foreign_keys
-    
+
     return schema

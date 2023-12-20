@@ -5,7 +5,7 @@ from utils.translate_utils import translate_zh_to_en
 from utils.db_utils import add_a_record
 from langdetect.lang_detect_exception import LangDetectException
 
-text2sql_bot = ChatBot(use_fastsql=False)
+text2sql_bot = ChatBot(use_fastsql=True)
 # replace None with your API token
 baidu_api_token = None
 
@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 @app.route("/chatbot")
 def home():
-    return render_template("index.html")
+    return render_template("index_fastsql.html")
 
 @app.route("/get_db_ids")
 def get_db_ids():
@@ -53,4 +53,4 @@ def get_bot_response():
     response += "<b>Predicted SQL query:</b><br>" + predicted_sql
     return response
 
-app.run(host="0.0.0.0", debug=False, port=6006)
+app.run(host="0.0.0.0", debug=False, port=8080)

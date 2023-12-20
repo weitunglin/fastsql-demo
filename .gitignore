@@ -1,0 +1,5 @@
+__pycache__/
+databases/
+data/
+db_contents_index/
+sic_ckpts/

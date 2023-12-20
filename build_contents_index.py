@@ -48,20 +48,20 @@ def build_content_index(db_path, index_path):
                         )
             except Exception as e:
                 print(str(e))
-    
+
     with open("./data/temp_db_index/contents.json", "w") as f:
         f.write(json.dumps(all_column_contents, indent = 2, ensure_ascii = True))
 
     # Building a BM25 Index (Direct Java Implementation), see https://github.com/castorini/pyserini/blob/master/docs/usage-index.md
     cmd = "python -m pyserini.index.lucene --collection JsonCollection --input ./data/temp_db_index --index {} --generator DefaultLuceneDocumentGenerator --threads 16 --storePositions --storeDocvectors --storeRaw".format(index_path)
-    
+
     d = os.system(cmd)
     print(d)
     os.remove("./data/temp_db_index/contents.json")
 
 if __name__ == "__main__":
     os.makedirs('./data/temp_db_index', exist_ok = True)
-    
+
     print("build content index for databases...")
     remove_contents_of_a_folder("db_contents_index")
     # build content index for Bank_Financials's training set databases
